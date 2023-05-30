@@ -1,4 +1,5 @@
 import argparse
+import csv
 import time
 from urllib.parse import urljoin
 
@@ -19,6 +20,8 @@ def parse_args():
                         help='Delay between requests in seconds (default: 5)')
     parser.add_argument('-a', '--user-agent', help='User agent to use',
                         default='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+    parser.add_argument('-o', '--output', default='output.csv',
+                        help='Output file for the scraped data (CSV)')
     return parser.parse_args()
 
 
@@ -76,11 +79,21 @@ def scrape_ecommerce_website(url, delay, user_agent):
     return products
 
 
+def save_to_csv(output_file, data):
+    with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['title', 'price', 'description', 'image_url']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in data:
+            writer.writerow(row)
+
+
 def main():
     args = parse_args()
     url = args.url
     delay = args.delay
     user_agent = args.user_agent
+    output = args.output
     products = scrape_ecommerce_website(url, delay, user_agent)
 
     for product in products:
@@ -89,6 +102,8 @@ def main():
         print(f"Description: {product['description']}")
         print(f"Image URL: {product['image_url']}")
         print('-' * 80)
+
+    save_to_csv(output, products)
 
 
 if __name__ == '__main__':
