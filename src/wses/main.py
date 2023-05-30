@@ -13,9 +13,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--url', help='URL of the website to scrape')
+    parser.add_argument('-u', '--url', help='URL of the website to scrape',
+                        required=True)
     parser.add_argument('-d', '--delay', type=int, default=5,
                         help='Delay between requests in seconds (default: 5)')
+    parser.add_argument('-a', '--user-agent', help='User agent to use',
+                        default='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
     return parser.parse_args()
 
 
@@ -44,8 +47,7 @@ def get_product_info(product_element):
     }
 
 
-def scrape_ecommerce_website(url, delay):
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
+def scrape_ecommerce_website(url, delay, user_agent):
     driver = init_webdriver(user_agent)
     driver.get(url)
 
@@ -78,7 +80,8 @@ def main():
     args = parse_args()
     url = args.url
     delay = args.delay
-    products = scrape_ecommerce_website(url, delay)
+    user_agent = args.user_agent
+    products = scrape_ecommerce_website(url, delay, user_agent)
 
     for product in products:
         print(f"Title: {product['title']}")
