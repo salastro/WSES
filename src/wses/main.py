@@ -54,28 +54,33 @@ def scrape_ecommerce_website(url, delay, user_agent):
     driver = init_webdriver(user_agent)
     driver.get(url)
 
-    # Wait for the products to load
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, 'product'))
-    )
+    try:
+        driver.get(url)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'product')))
 
-    # Get the page source and parse it with Beautiful Soup
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+        products = []
 
-    # Find all product elements
-    product_elements = soup.find_all('div', {'class': 'product'})
+        while True:
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            product_elements = soup.find_all('div', {'class': 'product'})
+            products.extend([get_product_info(product_element)
+                             for product_element in product_elements])
 
-    # Extract product information
-    products = [get_product_info(product_element)
-                for product_element in product_elements]
+            next_page = soup.find('a', {'class': 'next-page'})
+            if next_page:
+                next_page_url = urljoin(url, next_page['href'])
+                driver.get(next_page_url)
+                time.sleep(delay)
+            else:
+                break
 
-    next_page = soup.find('a', {'class': 'next-page'})
-    if next_page:
-        next_page_url = urljoin(url, next_page['href'])
-    driver.get(next_page_url)
-    time.sleep(delay)
+    except Exception:
+        products = []
 
-    driver.quit()
+    finally:
+        driver.quit()
+
     return products
 
 
