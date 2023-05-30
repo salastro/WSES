@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -16,6 +17,14 @@ def parse_args():
     parser.add_argument('-d', '--delay', type=int, default=5,
                         help='Delay between requests in seconds (default: 5)')
     return parser.parse_args()
+
+
+def init_webdriver(user_agent):
+    chrome_options = Options()
+    chrome_options.add_argument(f'user-agent={user_agent}')
+    driver = webdriver.Chrome(
+        ChromeDriverManager().install(), options=chrome_options)
+    return driver
 
 
 def get_product_info(product_element):
@@ -36,7 +45,8 @@ def get_product_info(product_element):
 
 
 def scrape_ecommerce_website(url, delay):
-    driver = webdriver.Chrome(ChromeDriverManager().install())
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
+    driver = init_webdriver(user_agent)
     driver.get(url)
 
     # Wait for the products to load
