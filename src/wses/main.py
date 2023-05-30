@@ -4,12 +4,16 @@ import time
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+from loguru import logger
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+
+# Configure Loguru
+logger.add("scraping.log", level="INFO", format="{time} {level} {message}")
 
 
 def parse_args():
@@ -52,7 +56,6 @@ def get_product_info(product_element):
 
 def scrape_ecommerce_website(url, delay, user_agent):
     driver = init_webdriver(user_agent)
-    driver.get(url)
 
     try:
         driver.get(url)
@@ -70,12 +73,14 @@ def scrape_ecommerce_website(url, delay, user_agent):
             next_page = soup.find('a', {'class': 'next-page'})
             if next_page:
                 next_page_url = urljoin(url, next_page['href'])
+                logger.info(f'Navigating to next page: {next_page_url}')
                 driver.get(next_page_url)
                 time.sleep(delay)
             else:
                 break
 
-    except Exception:
+    except Exception as e:
+        logger.error(f'Scraping failed: {str(e)}')
         products = []
 
     finally:
@@ -96,19 +101,18 @@ def save_to_csv(output_file, data):
 def main():
     args = parse_args()
     url = args.url
+    output_file = args.output
     delay = args.delay
-    user_agent = args.user_agent
-    output = args.output
-    products = scrape_ecommerce_website(url, delay, user_agent)
 
-    for product in products:
-        print(f"Title: {product['title']}")
-        print(f"Price: {product['price']}")
-        print(f"Description: {product['description']}")
-        print(f"Image URL: {product['image_url']}")
-        print('-' * 80)
+    logger.info(f'Starting to scrape {url}')
+    products = scrape_ecommerce_website(url, delay)
 
-    save_to_csv(output, products)
+    if products:
+        logger.info(f'Saving scraped data to {output_file}')
+        save_to_csv(output_file, products)
+        logger.info(f'Scraping completed successfully')
+    else:
+        logger.error('No data was scraped')
 
 
 if __name__ == '__main__':
