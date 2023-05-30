@@ -1,5 +1,6 @@
-import time
 import argparse
+import time
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -11,7 +12,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('url', help='URL of the website to scrape')
+    parser.add_argument('--url', help='URL of the website to scrape')
+    parser.add_argument('-d', '--delay', type=int, default=5,
+                        help='Delay between requests in seconds (default: 5)')
     return parser.parse_args()
 
 
@@ -32,7 +35,7 @@ def get_product_info(product_element):
     }
 
 
-def scrape_ecommerce_website(url):
+def scrape_ecommerce_website(url, delay):
     driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get(url)
 
@@ -51,13 +54,21 @@ def scrape_ecommerce_website(url):
     products = [get_product_info(product_element)
                 for product_element in product_elements]
 
+    next_page = soup.find('a', {'class': 'next-page'})
+    if next_page:
+        next_page_url = urljoin(url, next_page['href'])
+    driver.get(next_page_url)
+    time.sleep(delay)
+
     driver.quit()
     return products
 
 
 def main():
-    url = 'https://www.example-ecommerce-site.com/'
-    products = scrape_ecommerce_website(url)
+    args = parse_args()
+    url = args.url
+    delay = args.delay
+    products = scrape_ecommerce_website(url, delay)
 
     for product in products:
         print(f"Title: {product['title']}")
